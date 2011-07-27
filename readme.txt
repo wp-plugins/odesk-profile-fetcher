@@ -15,6 +15,15 @@ Display your odesk profile into your wordpress blog.
 Odesk Profile Fetcher is a wordpress plugin that uses Odesk API to display your odesk.com profile to your website. This plugin requires Odesk.com account. If you do not have one, please visit https://www.odesk.com/referrals/track/reyborn?redir=https%3A%2F%2Fwww.odesk.com%2Fusers%2F%7E%7E3b4cb1884e0b769a.
 Please provide your profile key, you can found it at your Odesk public profile page somewhere below your photo at the last part of the permalink.
 
+Informations that this plugin pulled from your Odesk profile are Overview, Resume, Word History and Feedback, Tests, and Portfolio. This is one good way to advertise your skills and expertise over the web and make it visible to everyone.
+
+Please follow the link below to view the live action of the plugin:
+http://reygcalantaol.com/php-programmer-asp-programmer-web-developer-about/
+
+Follow this link to view documentation and download page:
+http://reygcalantaol.com/odesk-profile-fetcher/
+
+
 == Features ==
 
 1. Built-in profile widget
