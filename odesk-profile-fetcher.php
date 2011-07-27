@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 if (isset($_POST['profileKey'])) {
 	update_option('odesk_profile_key', $_POST['profileKey'], ' ', 'yes');
+	update_option('odesk_profile_link', $_POST['footer_'], ' ', 'yes');
 }
 
 add_action('admin_menu', 'odesk_admin_page');
@@ -45,7 +46,9 @@ function odesk_options_page() { ?>
     <form action="<?php echo $_SERVER['REQUEST_URI']; ?>&updated=true" method="post">
         <table>
         <tr><td>Odesk Profile Number:</td><td><input name="profileKey" type="text" value="<?php echo get_option('odesk_profile_key'); ?>" size="50"/></td></tr>
-        <tr><td></td><td><input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" /></td></tr>
+       <tr><td></td><td><input name="footer_" type="checkbox" value="1" <?php if (get_option("odesk_profile_link") != '') { echo "checked=\"checked\"";} ?>/> Display developer link at the footer?</td></tr>
+       <tr><td></td><td><input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" /></td></tr>
+       
         </table>
     </form>
     </div>
@@ -94,7 +97,14 @@ function OdeskProfile() {
      	$output .= "</div>"; //End Tab		
 		
 		$output .= "</div>";	//End tabber	
-		$output .= "<div style=\"text-align:right; font-size:10px;\"><a href=\"http://reygcalantaol.com/odesk-profile-fetcher\">Odesk Profile Fetcher Plugin</a> by <a href=\"http://reygcalantaol.com\">Rey G. Calanta-ol</a></div";	//Footer	
+		$output .= "<div style=\"text-align:right; font-size:10px;\">";
+		if (get_option("odesk_profile_link") != '') {
+		$output .= "<i><a href=\"http://reygcalantaol.com/odesk-profile-fetcher\">Odesk Profile Fetcher Plugin</a> by <a href=\"http://reygcalantaol.com\">Rey G. Calanta-ol</a></i>";
+		}else{
+		$output .= "<i>Odesk  Profile  Fetcher  Plugin   by  Rey G. Calanta-ol</i>";
+		}
+		
+		$output .= "</div";	//Footer	
 	}
 	print_r($output);
 	//print_r($profile->profile->assignments->hr->job);
