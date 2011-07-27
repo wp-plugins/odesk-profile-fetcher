@@ -2,7 +2,6 @@
 /*
 Plugin Name: Odesk Profile Fetcher
 Plugin URI: http://reygcalantaol.com/odesk-profile-fetcher
-Plugin Demo: http://reygcalantaol.com/php-programmer-asp-programmer-web-developer-about/
 Description: This plugin uses Odesk API to display odesk profile in your website. If you find this plugin useful, please consider making a small donation to help this maintained and free to everyone. <a href="http://reygcalantaol.com/php-asp-programmer-donation">Click here to donate.</a>
 Version: 0.10
 Author: Rey Calanta-ol
@@ -90,12 +89,12 @@ function OdeskProfile() {
      	$output .= "</div>"; //End Tab
 		
 		$output .= "<div class=\"tabbertab\">"; //First tab
-	  	$output .= "<h2>Portfolio (".$profile->profile->dev_tot_feedback.")</h2>"; //Title
+	  	$output .= "<h2>Portfolio (".$profile->profile->dev_portfolio_items_count.")</h2>"; //Title
 	  	$output .= getPortfolio($profile); //Content
      	$output .= "</div>"; //End Tab		
 		
 		$output .= "</div>";	//End tabber	
-		$output .= "<div style=\"text-align:right; font-size:10px;\"><i>Odesk Profile Fetcher Plugin by <a href=\"http://reygcalantaol.com\">Rey G. Calanta-ol</a></i></div";	//Footer	
+		$output .= "<div style=\"text-align:right; font-size:10px;\"><a href=\"http://reygcalantaol.com/odesk-profile-fetcher\">Odesk Profile Fetcher Plugin</a> by <a href=\"http://reygcalantaol.com\">Rey G. Calanta-ol</a></div";	//Footer	
 	}
 	print_r($output);
 	//print_r($profile->profile->assignments->hr->job);
@@ -173,7 +172,7 @@ function getPortfolio($profile) {
 	$portfolio .= "<li><strong>Project Title:</strong> ".$hr->pi_title."</li>";
 	$portfolio .= "<li><strong>Completed:</strong> ".date('M d, Y',$date)."</li>";
 	$portfolio .= "<li><strong>Category:</strong> ".$hr->pi_category->pi_category_level1.">".$hr->pi_category->pi_category_level2."</li>";
-	$portfolio .= "<li><strong>URL:</strong> ".$hr->pi_url."</li>";
+	$portfolio .= "<li><strong>URL:</strong> <a href=\"".$hr->pi_url."\" rel=\"nofollow\" target=\"_blank\">".$hr->pi_url."</a></li>";
 	$portfolio .= "<li><strong>Description:</strong> ".$hr->pi_description."</li>";
 	$portfolio .= "</ul></td>";
 	$portfolio .= "</tr>";
