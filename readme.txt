@@ -2,11 +2,10 @@
 Contributors: Rey Calantaol
 Plugin URL: http://reygcalantaol.com/odesk-profile-fetcher/
 Plugin Demo: http://reygcalantaol.com/php-programmer-asp-programmer-web-developer-about/
-Donate link: http://reygcalantaol.com/php-asp-programmer-donation
 Tags: odesk profile,odesk
 Requires at least: 3.0
-Tested up to: 3.2.1
-Stable tag: 0.10
+Tested up to: 3.3.2
+Stable tag: 0.11
 
 Display your odesk profile into your wordpress blog.
 
@@ -45,12 +44,8 @@ You can find your odesk profile key in your public odesk profile.
 Below your profile photo, your see a permalink, the last part of your permalink is your odesk unique key.
 
 
-== Screenshots ==
-
-1. Plugin in action
-2. Plugin settings page
-
 == Changelog ==
-
+= 0.11 =
+Adding proxy support and redirection if odesk fails
 = 0.10 =
 The first released version

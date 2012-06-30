@@ -2,8 +2,8 @@
 /*
 Plugin Name: Odesk Profile Fetcher
 Plugin URI: http://reygcalantaol.com/odesk-profile-fetcher
-Description: This plugin uses Odesk API to display odesk profile in your website. If you find this plugin useful, please consider making a small donation to help this maintained and free to everyone. <a href="http://reygcalantaol.com/php-asp-programmer-donation">Click here to donate.</a>
-Version: 0.10
+Description: This plugin uses Odesk API to display odesk profile in your website.
+Version: 0.11
 Author: Rey Calanta-ol
 Author URI: http://reygcalantaol.com
 License: GPL2
@@ -18,16 +18,14 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-//add the admin options page
+
 
 if (isset($_POST['profileKey'])) {
 	update_option('odesk_profile_key', $_POST['profileKey'], ' ', 'yes');
 	update_option('odesk_profile_link', $_POST['footer_'], ' ', 'yes');
+	update_option('odesk_profile_proxies', $_POST['txtProxy'], ' ', 'yes');
+	update_option('odesk_profile_redirect', $_POST['txtRedirect'], ' ', 'yes');
 }
 
 add_action('admin_menu', 'odesk_admin_page');
@@ -45,8 +43,21 @@ function odesk_options_page() { ?>
     Please input your profile key, you can found it at your Odesk public profile page somewhere below your photo at the last part of the permalink.<br />Example: https://www.odesk.com/users/~~xxxxxxxxxxxxxxx, the last part including the tilde is your profile number.<br /><br />
     <form action="<?php echo $_SERVER['REQUEST_URI']; ?>&updated=true" method="post">
         <table>
-        <tr><td>Odesk Profile Number:</td><td><input name="profileKey" type="text" value="<?php echo get_option('odesk_profile_key'); ?>" size="50"/></td></tr>
-       <tr><td></td><td><input name="footer_" type="checkbox" value="1" <?php if (get_option("odesk_profile_link") != '') { echo "checked=\"checked\"";} ?>/> Display developer link at the footer?</td></tr>
+        <tr>
+          <td>Odesk Profile ID:</td><td><input name="profileKey" type="text" value="<?php echo get_option('odesk_profile_key'); ?>" style="width:350px;"/></td></tr>
+        <tr>
+          <td valign="top"><p>Proxies:</p></td>
+          <td><span style="font-size:11px;">
+            <textarea name="txtProxy" id="txtProxy" rows="4" style="width:350px;"><?php echo get_option("odesk_profile_proxies"); ?></textarea>
+          <br />
+          Separated by comma e.g 190.121.135.178:8080</span></td>
+        </tr>
+        <tr>
+          <td valign="top">Recirect URL:</td>
+          <td><input name="txtRedirect" type="text" id="txtRedirect" style="width:350px;" value="<?php echo get_option('odesk_profile_redirect'); ?>"/><br />
+          <span style="font-size:11px;">Url to show if odesk fails to load.</span></td>
+        </tr>
+        <tr><td></td><td><input name="footer_" type="checkbox" value="1" <?php if (get_option("odesk_profile_link") != '') { echo "checked=\"checked\"";} ?>/> Display developer link at the footer?</td></tr>
        <tr><td></td><td><input name="Submit" type="submit" value="<?php esc_attr_e('Save Changes'); ?>" /></td></tr>
        
         </table>
@@ -55,45 +66,76 @@ function odesk_options_page() { ?>
 <?php
 }
 
-add_shortcode('odesk_profile', 'OdeskProfile');
+add_shortcode('odesk_profile', 'odesk_profile_generator');
 
-function OdeskProfile() {
-	$profile = getOdeskProfile(get_option("odesk_profile_key"));
+function odesk_profile_generator() {
+	$proxy = "";
+	if (trim(get_option("odesk_profile_proxies")) != '') {
+		$proxies = explode(",",get_option("odesk_profile_proxies"));
+		$rand = rand(0,count($proxies));
+		$proxy = trim($proxies[$rand]);
+	}
+	//echo "Proxy: ".$proxy;
+	//exit;
+	//$proxy = "190.121.135.178:8080";
+	$url = "http://www.odesk.com/api/profiles/v1/providers/".trim(get_option("odesk_profile_key")).".xml";
+	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~3c3713f8ef08a463.xml";
+	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~97784d8733806815/brief.xml";
+	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~3c3713f8ef08a463?wsrc=tile_2/profile.xml";
+	$profile = odesk_curl_data($url, $proxy);
+	//print_r($profile);
+	//return $profile;
+	//exit;
+	//print_r($profile->profile);
+	//var_dump($profile->profile);
+	//exit;
+	//echo "time: ".$profile->server_time;
+	//exit;
+	//$profile = getOdeskProfile(get_option("odesk_profile_key"));
 	$output = "";
+	
 	if (!$profile) {
 		$output = "Invalid profile key!";
+		if (trim(get_option("odesk_profile_redirect")) != "") {
+			$output .= "<script type='text/javascript'>location.href='".get_option("odesk_profile_redirect")."'</script>";
+		}
+		//return $output;
 	}else{
-		$output .= getProfileHeader($profile);
+		//$output = $profile->server_time;
+		//return $output;
+		//exit;
+		//$output = $profile->server_time;
+		$output .= getProfileHeader($profile->profile);
 		$output .= "<div class=\"clear_both\"></div>"; //begin tabber
 		$output .= "<div class=\"tabber\">"; //begin tabber
 		$output .= "<div class=\"tabbertab\">"; //First tab
 	  	$output .= "<h2> Overview </h2>"; //Title
-	  	$output .= getOverview($profile); //Content
+		$output .= getOverview($profile->profile); //Content
      	$output .= "</div>"; //End Tab
-
+		
 		$output .= "<div class=\"tabbertab\">"; //First tab
 	  	$output .= "<h2>Resume</h2>"; //Title
-	  	$output .= getSkills($profile); //Content
-		$output .= getCertification($profile); //Content
-		$output .= getEmployment($profile); //Content
-		$output .= getOther($profile); //Content
-		$output .= getEducation($profile); //Content		
+	  	$output .= getSkills($profile->profile->skills->skill); //Content
+		$output .= getCertification($profile->profile->certification->certificate); //Content
+		$output .= getEmployment($profile->profile->experiences->experience); //Content
+		$output .= getOther($profile->profile->experiences->oth_experience); //Content
+		$output .= getEducation($profile->profile->education->institution); //Content		
      	$output .= "</div>"; //End Tab
 		
 		$output .= "<div class=\"tabbertab\">"; //First tab
 	  	$output .= "<h2>Work History and Feedback (".$profile->profile->assignments_count.")</h2>"; //Title
-		$output .= getWorkHistory($profile);
-		$output .= getWorkHistoryFP($profile);		
+		$output .= getWorkHistory($profile->profile->assignments->hr->job);
+		$output .= getWorkHistoryFP($profile->profile->assignments->fp->job);		
 		$output .= "</div>"; //End Tab
 
 		$output .= "<div class=\"tabbertab\">"; //First tab
-	  	$output .= "<h2>Test (".$profile->profile->tsexams_count.")</h2>"; //Title
+	  	$output .= "<h2>Skills (".$profile->profile->tsexams_count.")</h2>"; //Title
 	  	$output .= getTest($profile); //Content
      	$output .= "</div>"; //End Tab
 		
 		$output .= "<div class=\"tabbertab\">"; //First tab
 	  	$output .= "<h2>Portfolio (".$profile->profile->dev_portfolio_items_count.")</h2>"; //Title
-	  	$output .= getPortfolio($profile); //Content
+	  	$output .= getPortfolio($profile->profile->portfolio_items->portfolio_item); //Content
      	$output .= "</div>"; //End Tab		
 		
 		$output .= "</div>";	//End tabber	
@@ -104,23 +146,51 @@ function OdeskProfile() {
 		$output .= "<i>Odesk  Profile  Fetcher  Plugin   by  Rey G. Calanta-ol</i>";
 		}
 		
-		$output .= "</div";	//Footer	
+		$output .= "</div";	//Footer			
 	}
-	print_r($output);
-	//print_r($profile->profile->assignments->hr->job);
+	return $output;
 }
 
-function getOverview($profile) {
-	$ready = ($profile->profile->dev_is_ready == 1) ? 'Yes' : 'No';
+
+function odesk_curl_data($url, $proxy) {
+	$referer = "http://www.odesk.com";
+	$agent = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8";
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	if (trim($proxy) != '') {
+		curl_setopt($ch, CURLOPT_PROXY, $proxy);
+	}
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+	curl_setopt($ch, CURLOPT_REFERER, $referer);
+	curl_setopt($ch, CURLOPT_USERAGENT, $agent);
+	$data = curl_exec($ch);
+
+	$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);	
+	curl_close($ch);
+	
+	if ($status >= 200 && $status < 300) {	
+		$doc = new SimpleXmlElement($data, LIBXML_NOCDATA);
+		//print_r($doc);
+		return $doc;
+	}else{
+		return false;
+	}
+}
+
+function getOverview($p) {
+	//print_r($p);
+	$ready = ($p->dev_is_ready == 1) ? 'Yes' : 'No';
 	$overview .= "<div class=\"odesk_overview\">";	
-	$overview .= "<span>".$profile->profile->dev_blurb_short."</span><br /><br />";
+	$overview .= "<span>".$p->dev_blurb."</span><br /><br />";
 	$overview .= "<div class=\"odesk_overview_list\"><ul>";
-	$overview .= "<li><span class=\"caption\">Total Hours: </span><span class=\"value\">".$profile->profile->dev_total_hours."</span></li>";
-	$overview .= "<li><span class=\"caption\">Total Contracts: </span><span class=\"value\">".$profile->profile->dev_billed_assignments."</span></li>";
-	$overview .= "<li><span class=\"caption\">Location: </span><span class=\"value\">".$profile->profile->dev_location."</span></li>";
-	$overview .= "<li><span class=\"caption\">English Skills: </span><span class=\"value\">".$profile->profile->dev_eng_skill."</span></li>";
-	$overview .= "<li><span class=\"caption\">Member Since: </span><span class=\"value\">".$profile->profile->dev_member_since."</span></li>";
-	$overview .= "<li><span class=\"caption\">Last Worked: </span><span class=\"value\">".$profile->profile->dev_last_worked."</span></li>";
+	$overview .= "<li><span class=\"caption\">Total Hours: </span><span class=\"value\">".$p->dev_total_hours."</span></li>";
+	$overview .= "<li><span class=\"caption\">Total Contracts: </span><span class=\"value\">".$p->dev_billed_assignments."</span></li>";
+	$overview .= "<li><span class=\"caption\">Location: </span><span class=\"value\">".$p->dev_location."</span></li>";
+	$overview .= "<li><span class=\"caption\">English Skills: </span><span class=\"value\">".$p->dev_eng_skill."</span></li>";
+	$overview .= "<li><span class=\"caption\">Member Since: </span><span class=\"value\">".$p->dev_member_since."</span></li>";
+	$overview .= "<li><span class=\"caption\">Last Worked: </span><span class=\"value\">".$p->dev_last_worked."</span></li>";
 	$overview .= "<li><span class=\"caption\">Odesk Ready: </span><span class=\"value\">".$ready."</span></li>";
 	$overview .= "</ul></div>";
 	$overview .= "<div class=\"clear_both\"></div>";
@@ -165,7 +235,7 @@ function getTest($profile) {
 }
 
 
-function getPortfolio($profile) {
+function getPortfolio($portfolio) {
 	
 	$portfolio = "<div>";
 	$portfolio .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
@@ -174,7 +244,7 @@ function getPortfolio($profile) {
 	$portfolio .= "</tr>";	
 	$portfolio .= "<tbody>";
 	
-	foreach ($profile->profile->portfolio_items->portfolio_item as $hr) {
+	foreach ($portfolio as $hr) {
 	$date = (int)$hr->pi_completed;
 	$portfolio .= "<tr>";
 	$portfolio .= "<td valign=top><img src=\"".$hr->pi_thumbnail."\" /></td>";
@@ -213,7 +283,7 @@ function getWorkHistory($profile) {
 	$work .= "</tr>";
 	$work .= "<tbody>";
 	
-	foreach ($profile->profile->assignments->hr->job as $hr) {
+	foreach ($profile as $hr) {
 	if ($hr->as_client != 318878) {	
 	$charge = number_format((double)$hr->as_total_charge,2);
 	$feedback = ($hr->as_status == 'Closed') ? $hr->feedback->comment : '<i>Job in progress</i>';
@@ -249,7 +319,7 @@ function getWorkHistoryFP($profile) {
 	$work .= "</tr>";
 	$work .= "<tbody>";
 	
-	foreach ($profile->profile->assignments->fp->job as $hr) {
+	foreach ($profile as $hr) {
 	$charge = number_format((double)$hr->as_total_charge,2);
 	$feedback = ($hr->as_status == 'Closed') ? $hr->feedback->comment : '<i>Job in progress</i>';
 	$work .= "<tr>";
@@ -269,7 +339,7 @@ function getWorkHistoryFP($profile) {
 	
 }
 
-function getSkills($profile) {
+function getSkills($skills) {
 	
 	$skills = "<div>";
 	$skills .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
@@ -285,7 +355,7 @@ function getSkills($profile) {
 	$skills .= "</tr>";
 	$skills .= "<tbody>";
 	
-	foreach ($profile->profile->skills->skill as $skill) {
+	foreach ($skills as $skill) {
 		
 	$skills .= "<tr>";
 	$skills .= "<td>".$skill->skl_name."</td>";
@@ -304,7 +374,7 @@ function getSkills($profile) {
 	
 }
 
-function getCertification($profile) {
+function getCertification($certificate) {
 	
 	$certificate .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
 	$certificate .= "<tr>";
@@ -318,7 +388,7 @@ function getCertification($profile) {
 	$certificate .= "</tr>";
 	$certificate .= "<tbody>";
 	
-	foreach ($profile->profile->certification->certificate as $c) {
+	foreach ($certificate as $c) {
 		
 	$certificate .= "<tr>";
 	$certificate .= "<td>".$c->cer_earned."</td>";
@@ -352,7 +422,7 @@ function getEmployment($profile) {
 	$employ .= "</tr>";
 	$employ .= "<tbody>";
 	
-	foreach ($profile->profile->experiences->experience as $c) {
+	foreach ($profile as $c) {
 		
 	$employ .= "<tr>";
 	$employ .= "<td>".$c->exp_from."</td>";
@@ -372,7 +442,7 @@ function getEmployment($profile) {
 }
 
 
-function getOther($profile) {
+function getOther($other) {
 	
 	$other .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
 	$other .= "<tr>";
@@ -380,7 +450,7 @@ function getOther($profile) {
 	$other .= "</tr>";	
 	$other .= "<tbody>";
 	
-	foreach ($profile->profile->oth_experiences->oth_experience as $c) {
+	foreach ($other as $c) {
 		
 	$other .= "<tr>";
 	$other .= "<td>".$c->exp_subject."</td>";
@@ -411,7 +481,7 @@ function getEducation($profile) {
 	$education .= "</tr>";	
 	$education .= "<tbody>";
 	
-	foreach ($profile->profile->education->institution as $c) {
+	foreach ($profile as $c) {
 		
 	$education .= "<tr>";
 	$education .= "<td>".$c->ed_from."</td>";
@@ -432,53 +502,20 @@ function getEducation($profile) {
 
 function getProfileHeader($profile) {
 	$header = "<div class=\"odesk_header\">";
-	$header .= "<div class=\"img\"><img src=\"".$profile->profile->dev_portrait."\" /><br />";
+	$header .= "<div class=\"img\"><img src=\"".$profile->dev_portrait."\" /><br />";
 	$header .= "<a target=\"_blank\" href=\"https://www.odesk.com/users/".get_option("odesk_profile_key")."?wsrc=tile_2&wlnk=btn&_scr=hireme_l\">";
 	$header .= "<img src=\"".getURL().'th_hire_me_button.jpg'."\" border=0 width=100 /></a></div>";
-	$header .= "<div class=\"header_profilename\"><strong><a target=\"_blank\" href=\"https://www.odesk.com/users/".get_option("odesk_profile_key")."?wsrc=tile_2&wlnk=btn&_scr=hireme_l\">".$profile->profile->dev_short_name."</a></strong></h1>";
+	$header .= "<div class=\"header_profilename\"><strong><a target=\"_blank\" href=\"https://www.odesk.com/users/".get_option("odesk_profile_key")."?wsrc=tile_2&wlnk=btn&_scr=hireme_l\">".$profile->dev_short_name."</a></strong></h1>";
 	$header .= "<div class=\"border_line\"></div>";
-	$header .= "<span>".$profile->profile->profile_title_full."</span><br />";
-	$header .= "<span>Current hourly rate: $<strong>".$profile->profile->dev_bill_rate."/hr</strong></span><br />";
-	$header .= "<span>Member since ".$profile->profile->dev_member_since."</span>";
+	$header .= "<span>".$profile->profile_title_full."</span><br />";
+	$header .= "<span>Current hourly rate: $<strong>".$profile->dev_bill_rate."/hr</strong></span><br />";
+	$header .= "<span>Member since ".$profile->dev_member_since."</span>";
 	$header .= "</div>";
 	$header .= "</div>";
 	
 	return $header;
 }
 
-function getProfileHeaderWidget($profile) {
-	$header = "<div class=\"odesk_header_widget\">";
-	$header .= "<div class=\"img\"><img src=\"".$profile->profile->dev_portrait."\" /></div>";
-	$header .= "<div class=\"header_profilename_widget\"><strong><a target=\"_blank\" href=\"https://www.odesk.com/users/".get_option("odesk_profile_key")."?wsrc=tile_2&wlnk=btn&_scr=hireme_l\">".$profile->profile->dev_short_name."</a></strong></h1><br />";
-	$header .= "<span>".$profile->profile->dev_profile_title."</span><br />";	
-	$header .= "<span>Hourly rate: $<strong>".$profile->profile->dev_bill_rate."/hr</strong></span><br />";
-	$header .= "<span>Member: ".$profile->profile->dev_member_since."</span>";
-	$header .= "</div>";
-	$header .= "</div>";
-	
-	return $header;
-}
-
-function getOdeskProfile($key) {
-	$url = "http://www.odesk.com/api/profiles/v1/providers/".$key."?wsrc=tile_2/profile.xml";
-	//$url = getURL()."profile.xml";
-	$ch = curl_init($url);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_HEADER, 0);
-	$data = curl_exec($ch);
-	
-	$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);	
-	curl_close($ch);
-	
-	if ($status >= 200 && $status < 300) {	
-		$doc = new SimpleXmlElement($data, LIBXML_NOCDATA);
-		//print_r($doc);
-		return $doc;
-	}else{
-		return false;
-	}
-
-}
 
 function add_odesk_scripts() {
     wp_enqueue_script('odesk_tabber', getURL().'tabber-minimized.js');
@@ -489,50 +526,5 @@ function add_odesk_style() {
 function getURL() {
 	return WP_CONTENT_URL.'/plugins/'.basename(dirname(__FILE__)) . '/';
 }
-
-
-function getProfileWidget() {
-	$profile = getOdeskProfile(get_option("odesk_profile_key"));
-	print_r(getProfileHeaderWidget($profile));
-}
-
-
-/**
- * Odesk PRofile Widget, will be displayed on post page
- */
-class OdeskProfileWidget extends WP_Widget {
-	function OdeskProfileWidget() {
-		parent::WP_Widget(false, $name = 'Odesk Profile Widget');
-	}
-
-	function widget($args, $instance) {
-		//if ( is_single() && !is_page() ) { // display on post page only
-			extract( $args );
-			$title = apply_filters('widget_title', $instance['title']);
-			echo $before_widget;
-			if ( $title )
-				echo $before_title . $title . $after_title;
-			getProfileWidget();
-			print_r($profileWidget);
-			echo $after_widget;
-		//}
-	}
-
-	function update($new_instance, $old_instance) {
-		$instance = $old_instance;
-		$instance['title'] = strip_tags($new_instance['title']);
-		return $instance;
-	}
-
-	function form($instance) {
-		$title = esc_attr($instance['title']);
-		?>
-		<p><label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:'); ?> <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" /></label></p>
-		<?php
-	}
-
-} // class OdeskProfileWidget
-
-add_action( 'widgets_init', create_function( '', 'return register_widget("OdeskProfileWidget");' ) );
 
 ?>
