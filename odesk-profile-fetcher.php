@@ -72,26 +72,11 @@ function odesk_profile_generator() {
 	$proxy = "";
 	if (trim(get_option("odesk_profile_proxies")) != '') {
 		$proxies = explode(",",get_option("odesk_profile_proxies"));
-		$rand = rand(0,count($proxies));
+		$rand = rand(0,count($proxies)-1);
 		$proxy = trim($proxies[$rand]);
 	}
-	//echo "Proxy: ".$proxy;
-	//exit;
-	//$proxy = "190.121.135.178:8080";
 	$url = "http://www.odesk.com/api/profiles/v1/providers/".trim(get_option("odesk_profile_key")).".xml";
-	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~3c3713f8ef08a463.xml";
-	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~97784d8733806815/brief.xml";
-	//$url = "http://www.odesk.com/api/profiles/v1/providers/~~3c3713f8ef08a463?wsrc=tile_2/profile.xml";
 	$profile = odesk_curl_data($url, $proxy);
-	//print_r($profile);
-	//return $profile;
-	//exit;
-	//print_r($profile->profile);
-	//var_dump($profile->profile);
-	//exit;
-	//echo "time: ".$profile->server_time;
-	//exit;
-	//$profile = getOdeskProfile(get_option("odesk_profile_key"));
 	$output = "";
 	
 	if (!$profile) {
@@ -101,10 +86,6 @@ function odesk_profile_generator() {
 		}
 		//return $output;
 	}else{
-		//$output = $profile->server_time;
-		//return $output;
-		//exit;
-		//$output = $profile->server_time;
 		$output .= getProfileHeader($profile->profile);
 		$output .= "<div class=\"clear_both\"></div>"; //begin tabber
 		$output .= "<div class=\"tabber\">"; //begin tabber
@@ -129,8 +110,8 @@ function odesk_profile_generator() {
 		$output .= "</div>"; //End Tab
 
 		$output .= "<div class=\"tabbertab\">"; //First tab
-	  	$output .= "<h2>Skills (".$profile->profile->tsexams_count.")</h2>"; //Title
-	  	$output .= getTest($profile); //Content
+	  	$output .= "<h2>Tests (".$profile->profile->tsexams_count.")</h2>"; //Title
+	  	$output .= getTest($profile->profile->tsexams->tsexam); //Content
      	$output .= "</div>"; //End Tab
 		
 		$output .= "<div class=\"tabbertab\">"; //First tab
@@ -202,7 +183,7 @@ function getOverview($p) {
 function getTest($profile) {
 	
 	$work = "<div>";
-	$work .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$work .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$work .= "<tr>";
 	$work .= "<td colspan=5><span><strong>oDesk Tests Taken</strong></span></td>";
 	$work .= "</tr>";	
@@ -215,7 +196,7 @@ function getTest($profile) {
 	$work .= "</tr>";
 	$work .= "<tbody>";
 	
-	foreach ($profile->profile->tsexams->tsexam as $hr) {
+	foreach ($profile as $hr) {
 
 	$work .= "<tr>";
 	$work .= "<td>".$hr->ts_name."</td>";
@@ -235,28 +216,27 @@ function getTest($profile) {
 }
 
 
-function getPortfolio($portfolio) {
+function getPortfolio($folio) {
 	
 	$portfolio = "<div>";
-	$portfolio .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$portfolio .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$portfolio .= "<tr>";
 	$portfolio .= "<td colspan=2><span><strong>Portfolio</strong></span></td>";
 	$portfolio .= "</tr>";	
 	$portfolio .= "<tbody>";
 	
-	foreach ($portfolio as $hr) {
-	$date = (int)$hr->pi_completed;
-	$portfolio .= "<tr>";
-	$portfolio .= "<td valign=top><img src=\"".$hr->pi_thumbnail."\" /></td>";
-	$portfolio .= "<td><ul>";
-	$portfolio .= "<li><strong>Project Title:</strong> ".$hr->pi_title."</li>";
-	$portfolio .= "<li><strong>Completed:</strong> ".date('M d, Y',$date)."</li>";
-	$portfolio .= "<li><strong>Category:</strong> ".$hr->pi_category->pi_category_level1.">".$hr->pi_category->pi_category_level2."</li>";
-	$portfolio .= "<li><strong>URL:</strong> <a href=\"".$hr->pi_url."\" rel=\"nofollow\" target=\"_blank\">".$hr->pi_url."</a></li>";
-	$portfolio .= "<li><strong>Description:</strong> ".$hr->pi_description."</li>";
-	$portfolio .= "</ul></td>";
-	$portfolio .= "</tr>";
-	
+	foreach ($folio as $hr) {
+		$date = (int)$hr->pi_completed;
+		$portfolio .= "<tr>";
+		$portfolio .= "<td valign=top><img src=\"".$hr->pi_thumbnail."\" /></td>";
+		$portfolio .= "<td><ul>";
+		$portfolio .= "<li><strong>Project Title:</strong> ".$hr->pi_title."</li>";
+		$portfolio .= "<li><strong>Completed:</strong> ".date('M d, Y',$date)."</li>";
+		$portfolio .= "<li><strong>Category:</strong> ".$hr->pi_category->pi_category_level1.">".$hr->pi_category->pi_category_level2."</li>";
+		$portfolio .= "<li><strong>URL:</strong> <a href=\"".$hr->pi_url."\" rel=\"nofollow\" target=\"_blank\">".$hr->pi_url."</a></li>";
+		$portfolio .= "<li><strong>Description:</strong> ".$hr->pi_description."</li>";
+		$portfolio .= "</ul></td>";
+		$portfolio .= "</tr>";	
 	}
 	
 	$portfolio .= "</tbody>";
@@ -339,30 +319,26 @@ function getWorkHistoryFP($profile) {
 	
 }
 
-function getSkills($skills) {
+function getSkills($s) {
 	
 	$skills = "<div>";
-	$skills .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$skills .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$skills .= "<tr>";
-	$skills .= "<td colspan=5><span><strong>Skills</strong></span></td>";
+	$skills .= "<td colspan=3><span><strong>Skills</strong></span></td>";
 	$skills .= "</tr>";	
 	$skills .= "<tr>";
-	$skills .= "<th width=10%>Skill</th>";
-	$skills .= "<th width=15%>Experience</th>";
-	$skills .= "<th width=10%>Level</th>";
-	$skills .= "<th width=15%>Last Used</th>";
-	$skills .= "<th width=50%>Description</th>";
+	$skills .= "<th width=15%>Skill</th>";
+	$skills .= "<th width=15%>Level</th>";
+	$skills .= "<th width=70%>Description</th>";
 	$skills .= "</tr>";
 	$skills .= "<tbody>";
 	
-	foreach ($skills as $skill) {
+	foreach ($s as $skill) {
 		
 	$skills .= "<tr>";
 	$skills .= "<td>".$skill->skl_name."</td>";
-	$skills .= "<td>".$skill->skl_year_exp."</td>";
 	$skills .= "<td>".$skill->skl_level."</td>";
-	$skills .= "<td>".$skill->skl_last_used."</td>";
-	$skills .= "<td>".$skill->skl_comment."</td>";	
+	$skills .= "<td>".$skill->skl_description."</td>";	
 	$skills .= "</tr>";
 	
 	}
@@ -374,9 +350,9 @@ function getSkills($skills) {
 	
 }
 
-function getCertification($certificate) {
+function getCertification($cer) {
 	
-	$certificate .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$certificate .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$certificate .= "<tr>";
 	$certificate .= "<td colspan=4><span><strong>Certification</strong></span></td>";
 	$certificate .= "</tr>";	
@@ -388,7 +364,7 @@ function getCertification($certificate) {
 	$certificate .= "</tr>";
 	$certificate .= "<tbody>";
 	
-	foreach ($certificate as $c) {
+	foreach ($cer as $c) {
 		
 	$certificate .= "<tr>";
 	$certificate .= "<td>".$c->cer_earned."</td>";
@@ -409,7 +385,7 @@ function getCertification($certificate) {
 
 function getEmployment($profile) {
 	
-	$employ .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$employ .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$employ .= "<tr>";
 	$employ .= "<td colspan=5><span><strong>Employment History</strong></span></td>";
 	$employ .= "</tr>";	
@@ -442,15 +418,15 @@ function getEmployment($profile) {
 }
 
 
-function getOther($other) {
+function getOther($o) {
 	
-	$other .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$other .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$other .= "<tr>";
 	$other .= "<td colspan=2><span><strong>Other Experience</strong></span></td>";
 	$other .= "</tr>";	
 	$other .= "<tbody>";
 	
-	foreach ($other as $c) {
+	foreach ($o as $c) {
 		
 	$other .= "<tr>";
 	$other .= "<td>".$c->exp_subject."</td>";
@@ -467,7 +443,7 @@ function getOther($other) {
 
 function getEducation($profile) {
 	
-	$education .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+	$education .= "<table class=\"odesk_table\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">";
 	$education .= "<tr>";
 	$education .= "<td colspan=6><span><strong>Education</strong></span></td>";
 	$education .= "</tr>";
